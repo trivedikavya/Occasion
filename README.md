@@ -42,6 +42,8 @@ realistic demo events (a wedding, a birthday, a community Garba night) straight 
 | `npm run start` | Run the production build |
 | `npm run lint` | ESLint only |
 | `npx tsc --noEmit` | TypeScript only |
+| `npm test` | Run the Vitest unit suite (selectors, date math, Zod schemas, proposal matching) |
+| `npm run test:watch` | Vitest in watch mode |
 
 ### Environment variables
 
@@ -141,6 +143,11 @@ dictation tool you already have; every input in this app is a plain, focusable
 - All interactive controls are real `<button>`/`<input>`/`<label>` elements with
   `aria-label`s where there's no visible text; focus rings are visible everywhere
   (`:focus-visible` in `globals.css`).
+- Every text/background color pair in the theme was checked against WCAG AA (4.5:1 for
+  normal text) with an actual relative-luminance calculation, not eyeballed — this is why
+  there are two accent tokens (`--color-accent` for text/icons on dark surfaces,
+  `--color-accent-solid` for solid button backgrounds under light text): a single accent
+  value can't satisfy both contrast directions in a dark theme at once.
 - The Kanban board uses `dnd-kit`'s pointer *and* keyboard sensors; every card also has a
   keyboard-reachable "Move to..." menu as a non-drag fallback for changing status.
   Command bar, assistant panel, and quick-capture-focus shortcuts are configurable from
@@ -151,6 +158,19 @@ dictation tool you already have; every input in this app is a plain, focusable
   `components/ui/empty-state.tsx`, `skeleton.tsx`, `error-state.tsx`.
 - No secrets reach the client: `GEMINI_API_KEY` is read only inside `app/api/*` route
   handlers (`export const runtime = "nodejs"`), never in a Client Component.
+- All 7 `/api/ai/*` routes are rate-limited per IP (20 requests/minute, in-memory sliding
+  window — see `checkRateLimit` in `lib/api-utils.ts`) so a metered Gemini key can't be
+  exhausted by accident or abuse.
+
+## Testing
+
+`npm test` runs a Vitest suite (55 tests) covering the pure logic the rest of the app
+leans on: budget/task/vendor selectors (`lib/selectors.test.ts`), date math
+(`lib/dates.test.ts`), every AI response Zod schema's valid/invalid cases
+(`lib/schemas/ai.test.ts`), and the fuzzy name-matching used to apply AI proposals back
+onto real tasks/vendors/budget categories (`lib/proposal-matching.test.ts`). There's no
+browser/e2e layer — UI correctness is instead verified by the build pipeline (`tsc`,
+`eslint`, `next build`) plus manual end-to-end checks against the live Gemini API.
 
 ## Security note
 

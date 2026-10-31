@@ -59,7 +59,7 @@ export function ProposalReview({ proposals, onApply, onDismiss, className }: Pro
                 <span
                   className={cn(
                     "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border",
-                    checked ? "border-accent bg-accent text-accent-foreground" : "border-border"
+                    checked ? "border-accent bg-accent-solid text-accent-foreground" : "border-border"
                   )}
                 >
                   {checked ? <Check size={11} /> : null}

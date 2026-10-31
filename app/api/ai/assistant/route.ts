@@ -7,7 +7,7 @@ import { streamText, generateJson, GeminiError } from "@/lib/gemini";
 import { mockAssistantReply } from "@/lib/gemini-mock";
 import { buildAssistantSystemPrompt, PROPOSALS_MARKER } from "@/lib/prompts/assistant";
 import { PROPOSALS_SENTINEL } from "@/lib/assistant-protocol";
-import { parseRequestBody } from "@/lib/api-utils";
+import { parseRequestBody, checkRateLimit, rateLimitResponse } from "@/lib/api-utils";
 
 export const runtime = "nodejs";
 
@@ -37,6 +37,9 @@ function extractJson(text: string): unknown {
 }
 
 export async function POST(req: NextRequest) {
+  const rateLimit = checkRateLimit(req);
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfterSeconds);
+
   const parsed = await parseRequestBody(req, RequestSchema);
   if ("error" in parsed) return parsed.error;
   const { event, styleProfile, message, history } = parsed.data;

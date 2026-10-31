@@ -10,7 +10,7 @@ import {
   buildVendorQuoteMessageSystemPrompt,
   buildVendorQuoteMessageUserPrompt,
 } from "@/lib/prompts/vendor";
-import { parseRequestBody, geminiErrorResponse } from "@/lib/api-utils";
+import { parseRequestBody, geminiErrorResponse, checkRateLimit, rateLimitResponse } from "@/lib/api-utils";
 
 export const runtime = "nodejs";
 
@@ -21,6 +21,9 @@ const RequestSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const rateLimit = checkRateLimit(req);
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfterSeconds);
+
   const parsed = await parseRequestBody(req, RequestSchema);
   if ("error" in parsed) return parsed.error;
   const { event, vendor, styleProfile } = parsed.data;

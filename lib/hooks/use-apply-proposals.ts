@@ -4,18 +4,7 @@ import { useCallback } from "react";
 import { useStore } from "@/components/providers/store-provider";
 import type { Event } from "@/types/event";
 import type { AssistantProposal } from "@/lib/schemas/ai";
-
-function findByName<T extends { id: string }>(
-  items: T[],
-  name: string,
-  getName: (item: T) => string
-): T | undefined {
-  const target = name.trim().toLowerCase();
-  return (
-    items.find((item) => getName(item).toLowerCase() === target) ??
-    items.find((item) => getName(item).toLowerCase().includes(target) || target.includes(getName(item).toLowerCase()))
-  );
-}
+import { findByName } from "@/lib/proposal-matching";
 
 /**
  * Applies a batch of already-approved AssistantProposal objects to the given

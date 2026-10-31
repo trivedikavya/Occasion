@@ -60,7 +60,7 @@ export function IdeasView({ event }: { event: Event }) {
               className={cn(
                 "rounded-sm border px-2.5 py-1 text-xs font-medium transition-colors",
                 focus.includes(type)
-                  ? "border-accent/40 bg-accent-muted text-accent"
+                  ? "border-accent/40 bg-accent-muted text-accent-muted-foreground"
                   : "border-border text-muted hover:text-foreground"
               )}
             >

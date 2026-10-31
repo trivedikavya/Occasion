@@ -10,8 +10,10 @@
   --color-text: #e6e6e8;
   --color-muted: #8a8a90;
   --color-accent: #7b79e0;
+  --color-accent-solid: #5955c2;
   --color-accent-foreground: #f5f5f7;
   --color-accent-muted: #35335c;
+  --color-accent-muted-foreground: #a3a1ec;
   --color-success: #5fa777;
   --color-warning: #d2a74c;
   --color-danger: #e0756b;

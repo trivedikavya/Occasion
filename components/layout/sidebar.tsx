@@ -51,7 +51,7 @@ export function Sidebar({
       )}
     >
       <div className="flex items-center gap-2 border-b border-border px-4 py-4">
-        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent text-accent-foreground text-sm font-semibold">
+        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent-solid text-accent-foreground text-sm font-semibold">
           O
         </div>
         <span className="text-sm font-semibold tracking-tight text-foreground">Occasion</span>

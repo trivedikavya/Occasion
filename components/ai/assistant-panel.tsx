@@ -125,7 +125,7 @@ export function AssistantPanel({ event, open, onOpenChange }: AssistantPanelProp
                   className={cn(
                     "whitespace-pre-wrap rounded-md px-3 py-2 text-sm",
                     message.role === "user"
-                      ? "bg-accent text-accent-foreground"
+                      ? "bg-accent-solid text-accent-foreground"
                       : "bg-surface2 text-foreground"
                   )}
                 >

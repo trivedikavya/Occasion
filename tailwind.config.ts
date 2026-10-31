@@ -18,8 +18,12 @@ const config: Config = {
         muted: "var(--color-muted)",
         accent: {
           DEFAULT: "var(--color-accent)",
+          solid: "var(--color-accent-solid)",
           foreground: "var(--color-accent-foreground)",
-          muted: "var(--color-accent-muted)",
+          muted: {
+            DEFAULT: "var(--color-accent-muted)",
+            foreground: "var(--color-accent-muted-foreground)",
+          },
         },
         success: "var(--color-success)",
         warning: "var(--color-warning)",

@@ -70,7 +70,7 @@ export function VendorCard({ event, vendor, onEdit }: VendorCardProps) {
               className={cn(
                 "rounded-sm border px-2 py-0.5 text-[11px] font-medium transition-colors",
                 active
-                  ? "border-accent/40 bg-accent-muted text-accent"
+                  ? "border-accent/40 bg-accent-muted text-accent-muted-foreground"
                   : "border-border text-muted hover:text-foreground"
               )}
             >
