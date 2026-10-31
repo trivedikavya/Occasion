@@ -44,6 +44,7 @@ realistic demo events (a wedding, a birthday, a community Garba night) straight 
 | `npx tsc --noEmit` | TypeScript only |
 | `npm test` | Run the Vitest unit suite (selectors, date math, Zod schemas, proposal matching) |
 | `npm run test:watch` | Vitest in watch mode |
+| `npm run test:coverage` | Vitest with a v8 coverage report (90%+ lines/functions enforced on the tested modules) |
 
 ### Environment variables
 
@@ -169,8 +170,13 @@ leans on: budget/task/vendor selectors (`lib/selectors.test.ts`), date math
 (`lib/dates.test.ts`), every AI response Zod schema's valid/invalid cases
 (`lib/schemas/ai.test.ts`), and the fuzzy name-matching used to apply AI proposals back
 onto real tasks/vendors/budget categories (`lib/proposal-matching.test.ts`). There's no
-browser/e2e layer — UI correctness is instead verified by the build pipeline (`tsc`,
+browser/e2e layer - UI correctness is instead verified by the build pipeline (`tsc`,
 `eslint`, `next build`) plus manual end-to-end checks against the live Gemini API.
+
+`npm run test:coverage` reports v8 coverage scoped to those same tested modules (98.8%
+statements, 100% functions/lines, 90% branches at last run) with enforced thresholds in
+`vitest.config.mts`. `.github/workflows/ci.yml` runs type-check, lint, coverage, and build
+on every push/PR so this stays true over time, not just at submission time.
 
 ## Security note
 

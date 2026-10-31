@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 const DEFAULT_MODEL = "gemini-2.5-flash";
 const DEFAULT_TIMEOUT_MS = 25000;
@@ -138,13 +139,13 @@ export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> 
   try {
     return await attempt();
   } catch (firstError) {
-    console.warn("[gemini] first attempt failed, retrying once:", firstError);
+    logger.warn("gemini", "first attempt failed, retrying once", firstError);
     try {
       return await attempt(
         "Your previous response was invalid or didn't match the required JSON schema. Return ONLY valid JSON that strictly matches the schema — no markdown, no commentary."
       );
     } catch (secondError) {
-      console.error("[gemini] retry also failed:", secondError);
+      logger.error("gemini", "retry also failed", secondError);
       throw secondError instanceof GeminiError
         ? secondError
         : new GeminiError("Gemini request failed. Please try again.", "unknown");

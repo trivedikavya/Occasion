@@ -21,6 +21,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <TooltipProvider>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-md focus:bg-accent-solid focus:px-3 focus:py-2 focus:text-sm focus:text-accent-foreground"
+      >
+        Skip to content
+      </a>
       <div className="flex h-screen overflow-hidden bg-background">
         <Sidebar
           newEventOpen={newEventOpen}
@@ -45,7 +51,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             showAssistant={Boolean(activeEvent)}
             onOpenAssistant={() => setAssistantOpen(true)}
           />
-          <main className="flex-1 overflow-y-auto">{children}</main>
+          <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto">
+            {children}
+          </main>
         </div>
       </div>
 

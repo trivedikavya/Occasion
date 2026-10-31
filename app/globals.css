@@ -63,6 +63,21 @@ body {
   border-radius: 6px;
 }
 
+/* Respect the OS-level "reduce motion" preference: neutralize every CSS
+   animation/transition in the app (skeleton pulses, dialog fade/slide-in,
+   the listening mic button pulse, etc.) rather than opting in component by
+   component. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;

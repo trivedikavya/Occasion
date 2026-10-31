@@ -3,6 +3,7 @@ import { EventSchema, type Event } from "@/types/event";
 import { StyleProfileSchema, type StyleProfile } from "@/types/styleProfile";
 import { ShortcutsSchema, DEFAULT_SHORTCUTS, type ShortcutsConfig } from "@/types/shortcuts";
 import { buildDemoEvents, buildDemoStyleProfile } from "./demo-data";
+import { logger } from "./logger";
 
 const STORAGE_VERSION = "v1";
 const KEYS = {
@@ -38,10 +39,10 @@ function safeParse<T>(schema: z.ZodType<T>, raw: string | null, fallback: T): T 
     const parsed = JSON.parse(raw);
     const result = schema.safeParse(parsed);
     if (result.success) return result.data;
-    console.warn("Occasion: stored data failed validation, using fallback.", result.error.flatten());
+    logger.warn("store", "stored data failed validation, using fallback", result.error.flatten());
     return fallback;
   } catch (err) {
-    console.warn("Occasion: failed to parse stored data, using fallback.", err);
+    logger.warn("store", "failed to parse stored data, using fallback", err);
     return fallback;
   }
 }

@@ -53,6 +53,79 @@ function touch(event: Event): Event {
   return { ...event, updatedAt: nowIso() };
 }
 
+/** The four child collections every Event owns, each addressable generically by key. */
+type CollectionKey = "tasks" | "budgetItems" | "vendors" | "ideas";
+type CollectionItem<K extends CollectionKey> = Event[K][number];
+
+/**
+ * Generic add/update/delete for one of an event's child collections (tasks,
+ * budget items, vendors, ideas). Pulled out as a single reusable hook instead
+ * of four nearly-identical copy-pasted blocks — the only things that differ
+ * per collection are the id prefix and how a raw input becomes a stored item.
+ */
+function useCollectionActions<K extends CollectionKey, TInput>(
+  events: Event[],
+  persistEvents: (next: Event[]) => void,
+  collectionKey: K,
+  idPrefix: string,
+  buildItem: (input: TInput, id: string, eventId: string) => CollectionItem<K>,
+  /** Optional per-item transform applied after merging a patch (e.g. bumping the item's own updatedAt). */
+  touchItem: (item: CollectionItem<K>) => CollectionItem<K> = (item) => item
+) {
+  const add = useCallback(
+    (eventId: string, input: TInput): CollectionItem<K> | undefined => {
+      const event = events.find((e) => e.id === eventId);
+      if (!event) return undefined;
+      const item = buildItem(input, newId(idPrefix), eventId);
+      persistEvents(
+        events.map((e) =>
+          e.id === eventId
+            ? touch({ ...e, [collectionKey]: [...e[collectionKey], item] } as Event)
+            : e
+        )
+      );
+      return item;
+    },
+    [events, persistEvents, collectionKey, idPrefix, buildItem]
+  );
+
+  const update = useCallback(
+    (eventId: string, itemId: string, patch: Partial<TInput>) => {
+      persistEvents(
+        events.map((e) => {
+          if (e.id !== eventId) return e;
+          const collection = e[collectionKey] as CollectionItem<K>[];
+          return touch({
+            ...e,
+            [collectionKey]: collection.map((item) =>
+              item.id === itemId ? touchItem({ ...item, ...patch }) : item
+            ),
+          } as Event);
+        })
+      );
+    },
+    [events, persistEvents, collectionKey, touchItem]
+  );
+
+  const remove = useCallback(
+    (eventId: string, itemId: string) => {
+      persistEvents(
+        events.map((e) => {
+          if (e.id !== eventId) return e;
+          const collection = e[collectionKey] as CollectionItem<K>[];
+          return touch({
+            ...e,
+            [collectionKey]: collection.filter((item) => item.id !== itemId),
+          } as Event);
+        })
+      );
+    },
+    [events, persistEvents, collectionKey]
+  );
+
+  return { add, update, remove };
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<Event[]>([]);
   const [styleProfile, setStyleProfileState] = useState<StyleProfile>({
@@ -101,9 +174,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const updateEvent = useCallback(
     (eventId: string, patch: Partial<EventInput>) => {
-      persistEvents(
-        events.map((e) => (e.id === eventId ? touch({ ...e, ...patch }) : e))
-      );
+      persistEvents(events.map((e) => (e.id === eventId ? touch({ ...e, ...patch }) : e)));
     },
     [events, persistEvents]
   );
@@ -115,177 +186,37 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [events, persistEvents]
   );
 
-  // --- Tasks ---
-  const addTask = useCallback(
-    (eventId: string, input: TaskInput) => {
-      const event = events.find((e) => e.id === eventId);
-      if (!event) return undefined;
-      const task: Task = {
-        id: newId("task"),
-        eventId,
-        ...input,
-        createdAt: nowIso(),
-        updatedAt: nowIso(),
-      };
-      persistEvents(
-        events.map((e) => (e.id === eventId ? touch({ ...e, tasks: [...e.tasks, task] }) : e))
-      );
-      return task;
-    },
-    [events, persistEvents]
+  const taskActions = useCollectionActions<"tasks", TaskInput>(
+    events,
+    persistEvents,
+    "tasks",
+    "task",
+    (input, id, eventId) => ({ id, eventId, ...input, createdAt: nowIso(), updatedAt: nowIso() }),
+    (task) => ({ ...task, updatedAt: nowIso() })
   );
 
-  const updateTask = useCallback(
-    (eventId: string, taskId: string, patch: Partial<TaskInput>) => {
-      persistEvents(
-        events.map((e) =>
-          e.id === eventId
-            ? touch({
-                ...e,
-                tasks: e.tasks.map((t) =>
-                  t.id === taskId ? { ...t, ...patch, updatedAt: nowIso() } : t
-                ),
-              })
-            : e
-        )
-      );
-    },
-    [events, persistEvents]
+  const budgetActions = useCollectionActions<"budgetItems", BudgetItemInput>(
+    events,
+    persistEvents,
+    "budgetItems",
+    "budget",
+    (input, id, eventId) => ({ id, eventId, ...input })
   );
 
-  const deleteTask = useCallback(
-    (eventId: string, taskId: string) => {
-      persistEvents(
-        events.map((e) =>
-          e.id === eventId ? touch({ ...e, tasks: e.tasks.filter((t) => t.id !== taskId) }) : e
-        )
-      );
-    },
-    [events, persistEvents]
+  const vendorActions = useCollectionActions<"vendors", VendorInput>(
+    events,
+    persistEvents,
+    "vendors",
+    "vendor",
+    (input, id, eventId) => ({ id, eventId, ...input })
   );
 
-  // --- Budget items ---
-  const addBudgetItem = useCallback(
-    (eventId: string, input: BudgetItemInput) => {
-      const event = events.find((e) => e.id === eventId);
-      if (!event) return undefined;
-      const item: BudgetItem = { id: newId("budget"), eventId, ...input };
-      persistEvents(
-        events.map((e) =>
-          e.id === eventId ? touch({ ...e, budgetItems: [...e.budgetItems, item] }) : e
-        )
-      );
-      return item;
-    },
-    [events, persistEvents]
-  );
-
-  const updateBudgetItem = useCallback(
-    (eventId: string, itemId: string, patch: Partial<BudgetItemInput>) => {
-      persistEvents(
-        events.map((e) =>
-          e.id === eventId
-            ? touch({
-                ...e,
-                budgetItems: e.budgetItems.map((b) => (b.id === itemId ? { ...b, ...patch } : b)),
-              })
-            : e
-        )
-      );
-    },
-    [events, persistEvents]
-  );
-
-  const deleteBudgetItem = useCallback(
-    (eventId: string, itemId: string) => {
-      persistEvents(
-        events.map((e) =>
-          e.id === eventId
-            ? touch({ ...e, budgetItems: e.budgetItems.filter((b) => b.id !== itemId) })
-            : e
-        )
-      );
-    },
-    [events, persistEvents]
-  );
-
-  // --- Vendors ---
-  const addVendor = useCallback(
-    (eventId: string, input: VendorInput) => {
-      const event = events.find((e) => e.id === eventId);
-      if (!event) return undefined;
-      const vendor: Vendor = { id: newId("vendor"), eventId, ...input };
-      persistEvents(
-        events.map((e) => (e.id === eventId ? touch({ ...e, vendors: [...e.vendors, vendor] }) : e))
-      );
-      return vendor;
-    },
-    [events, persistEvents]
-  );
-
-  const updateVendor = useCallback(
-    (eventId: string, vendorId: string, patch: Partial<VendorInput>) => {
-      persistEvents(
-        events.map((e) =>
-          e.id === eventId
-            ? touch({
-                ...e,
-                vendors: e.vendors.map((v) => (v.id === vendorId ? { ...v, ...patch } : v)),
-              })
-            : e
-        )
-      );
-    },
-    [events, persistEvents]
-  );
-
-  const deleteVendor = useCallback(
-    (eventId: string, vendorId: string) => {
-      persistEvents(
-        events.map((e) =>
-          e.id === eventId ? touch({ ...e, vendors: e.vendors.filter((v) => v.id !== vendorId) }) : e
-        )
-      );
-    },
-    [events, persistEvents]
-  );
-
-  // --- Ideas ---
-  const addIdea = useCallback(
-    (eventId: string, input: IdeaInput) => {
-      const event = events.find((e) => e.id === eventId);
-      if (!event) return undefined;
-      const idea: Idea = { id: newId("idea"), eventId, ...input, createdAt: nowIso() };
-      persistEvents(
-        events.map((e) => (e.id === eventId ? touch({ ...e, ideas: [...e.ideas, idea] }) : e))
-      );
-      return idea;
-    },
-    [events, persistEvents]
-  );
-
-  const updateIdea = useCallback(
-    (eventId: string, ideaId: string, patch: Partial<IdeaInput>) => {
-      persistEvents(
-        events.map((e) =>
-          e.id === eventId
-            ? touch({ ...e, ideas: e.ideas.map((i) => (i.id === ideaId ? { ...i, ...patch } : i)) })
-            : e
-        )
-      );
-    },
-    [events, persistEvents]
-  );
-
-  const deleteIdea = useCallback(
-    (eventId: string, ideaId: string) => {
-      persistEvents(
-        events.map((e) =>
-          e.id === eventId ? touch({ ...e, ideas: e.ideas.filter((i) => i.id !== ideaId) }) : e
-        )
-      );
-    },
-    [events, persistEvents]
+  const ideaActions = useCollectionActions<"ideas", IdeaInput>(
+    events,
+    persistEvents,
+    "ideas",
+    "idea",
+    (input, id, eventId) => ({ id, eventId, ...input, createdAt: nowIso() })
   );
 
   const setStyleProfile = useCallback((profile: StyleProfile) => {
@@ -308,18 +239,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addEvent,
       updateEvent,
       deleteEvent,
-      addTask,
-      updateTask,
-      deleteTask,
-      addBudgetItem,
-      updateBudgetItem,
-      deleteBudgetItem,
-      addVendor,
-      updateVendor,
-      deleteVendor,
-      addIdea,
-      updateIdea,
-      deleteIdea,
+      addTask: taskActions.add,
+      updateTask: taskActions.update,
+      deleteTask: taskActions.remove,
+      addBudgetItem: budgetActions.add,
+      updateBudgetItem: budgetActions.update,
+      deleteBudgetItem: budgetActions.remove,
+      addVendor: vendorActions.add,
+      updateVendor: vendorActions.update,
+      deleteVendor: vendorActions.remove,
+      addIdea: ideaActions.add,
+      updateIdea: ideaActions.update,
+      deleteIdea: ideaActions.remove,
       setStyleProfile,
       resetDemo,
     }),
@@ -331,18 +262,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addEvent,
       updateEvent,
       deleteEvent,
-      addTask,
-      updateTask,
-      deleteTask,
-      addBudgetItem,
-      updateBudgetItem,
-      deleteBudgetItem,
-      addVendor,
-      updateVendor,
-      deleteVendor,
-      addIdea,
-      updateIdea,
-      deleteIdea,
+      taskActions,
+      budgetActions,
+      vendorActions,
+      ideaActions,
       setStyleProfile,
       resetDemo,
     ]
